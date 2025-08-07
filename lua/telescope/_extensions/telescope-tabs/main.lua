@@ -137,7 +137,27 @@ M.list_tabs = function(opts)
 					end
 					actions.close(prompt_bufnr)
 					vim.api.nvim_set_current_tabpage(selection.value[5])
+
+                    vim.defer_fn(function()
+                        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(selection.value[5])) do
+                            local bufnr = vim.api.nvim_win_get_buf(win)
+                            if vim.bo[bufnr].buftype == "terminal" then
+                                vim.api.nvim_set_current_win(win)
+                                vim.cmd("startinsert")
+                                --enter zsh vi-mode insert mode
+                                vim.defer_fn(function()
+                                    vim.api.nvim_chan_send(vim.b.terminal_job_id, "\27i")  -- ESC + i
+                                end, 30)
+
+                                break
+                            end
+                        end
+                    end, 200)
+
 				end)
+
+
+
 				map('i', opts.close_tab_shortcut_i, close_tab)
 				map('n', opts.close_tab_shortcut_n, close_tab)
 				return true
