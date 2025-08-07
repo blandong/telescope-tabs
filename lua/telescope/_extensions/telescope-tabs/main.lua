@@ -142,7 +142,22 @@ M.list_tabs = function(opts)
 				map('n', opts.close_tab_shortcut_n, close_tab)
 				return true
 			end,
-			previewer = opts.show_preview and conf.file_previewer {} or nil,
+			
+			    previewer = opts.show_preview and require('telescope.previewers').new_buffer_previewer({
+				define_preview = function(self, entry)
+				    local file_ids = entry.value[3]
+				    if not file_ids or #file_ids == 0 then return end
+		
+				    local bufnr = file_ids[1]
+				    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+		
+				    -- Get content even if terminal buffer
+				    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+				    vim.api.nvim_buf_set_option(self.state.bufnr, "filetype", vim.bo[bufnr].filetype)
+				    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+				end,
+			    }) or nil,
+
 			on_complete = {
 				function(picker)
 					picker:set_selection(current_tab.index - 1)
